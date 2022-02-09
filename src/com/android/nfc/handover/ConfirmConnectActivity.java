@@ -16,6 +16,8 @@
 
 package com.android.nfc.handover;
 
+import static android.view.WindowManager.LayoutParams.SYSTEM_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothDevice;
@@ -35,14 +37,16 @@ public class ConfirmConnectActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().addSystemFlags(SYSTEM_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS);
         AlertDialog.Builder builder = new AlertDialog.Builder(this,
                 AlertDialog.THEME_DEVICE_DEFAULT_LIGHT);
         Intent launchIntent = getIntent();
         mDevice = launchIntent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
         if (mDevice == null) finish();
         Resources res = getResources();
+        String btExtraName = launchIntent.getStringExtra(BluetoothDevice.EXTRA_NAME);
         String confirmString = String.format(res.getString(R.string.confirm_pairing),
-                launchIntent.getStringExtra(BluetoothDevice.EXTRA_NAME));
+                "\"" + btExtraName.replaceAll("\\r|\\n", "") + "\"");
         builder.setMessage(confirmString)
                .setCancelable(false)
                .setPositiveButton(res.getString(R.string.pair_yes),
@@ -50,6 +54,7 @@ public class ConfirmConnectActivity extends Activity {
                    public void onClick(DialogInterface dialog, int id) {
                         Intent allowIntent = new Intent(BluetoothPeripheralHandover.ACTION_ALLOW_CONNECT);
                         allowIntent.putExtra(BluetoothDevice.EXTRA_DEVICE, mDevice);
+                        allowIntent.setPackage("com.android.nfc");
                         sendBroadcast(allowIntent);
                         ConfirmConnectActivity.this.mAlert = null;
                         ConfirmConnectActivity.this.finish();
@@ -60,6 +65,7 @@ public class ConfirmConnectActivity extends Activity {
                    public void onClick(DialogInterface dialog, int id) {
                        Intent denyIntent = new Intent(BluetoothPeripheralHandover.ACTION_DENY_CONNECT);
                        denyIntent.putExtra(BluetoothDevice.EXTRA_DEVICE, mDevice);
+                       denyIntent.setPackage("com.android.nfc");
                        sendBroadcast(denyIntent);
                        ConfirmConnectActivity.this.mAlert = null;
                        ConfirmConnectActivity.this.finish();
@@ -79,6 +85,7 @@ public class ConfirmConnectActivity extends Activity {
             mAlert.dismiss();
             Intent denyIntent = new Intent(BluetoothPeripheralHandover.ACTION_DENY_CONNECT);
             denyIntent.putExtra(BluetoothDevice.EXTRA_DEVICE, mDevice);
+            denyIntent.setPackage("com.android.nfc");
             sendBroadcast(denyIntent);
             mAlert = null;
         }
